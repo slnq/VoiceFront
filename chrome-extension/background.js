@@ -17,16 +17,31 @@ chrome.runtime.onMessage.addListener((msg, sender, reply)=>{
   if(msg.target !== 'background') return;
   (async()=>{
     try{
-      if(msg.action === 'start'){
-        await ensureOffscreen();
+      // 対象タブのIDを特定（渡されていなければアクティブタブを取得）
+      let tabId = msg.tabId;
+      if(!tabId){
         const [tab] = await chrome.tabs.query({active:true, currentWindow:true});
-        const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
-        // small delay so the offscreen listener is definitely ready
+        if(tab) tabId = tab.id;
+      }
+
+      if(msg.action === 'start'){
+        if(!tabId) throw new Error('対象のタブが見つかりません');
+        await ensureOffscreen();
+        const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
         await new Promise(r=>setTimeout(r,150));
-        const r = await chrome.runtime.sendMessage({target:'offscreen', action:'start', streamId});
+        const r = await chrome.runtime.sendMessage({
+          target: 'offscreen', 
+          action: 'start', 
+          tabId, 
+          streamId
+        });
         reply(r);
       } else {
-        const r = await chrome.runtime.sendMessage({target:'offscreen', action:msg.action, voice:msg.voice, bgm:msg.bgm, sharp:msg.sharp, width:msg.width});
+        const r = await chrome.runtime.sendMessage({
+          ...msg, 
+          target: 'offscreen', 
+          tabId
+        });
         reply(r);
       }
     }catch(e){ reply({ok:false, error:e.message}); }

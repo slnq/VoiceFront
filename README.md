@@ -1,3 +1,5 @@
+Multi-Tab Support: Audio separation and volume controls can now be applied independently to each individual tab.
+
 # <img width="48" height="48" alt="image" src="https://github.com/user-attachments/assets/d3061021-c033-4db4-b85f-591cc5bc1136" /> VoiceFront — Dialogue Booster
 
 > **Real-time voice/dialogue booster for any video or song in your browser.**  

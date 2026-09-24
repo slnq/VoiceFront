@@ -1,9 +1,19 @@
 const statusEl=document.getElementById('status');
 const startBtn=document.getElementById('start-btn');
+let currentTabId = null;
+
 function setStatus(t,cls=''){ statusEl.textContent=t; statusEl.className=cls; }
 
-function send(action, extra={}){
-  return chrome.runtime.sendMessage({target:'background', action, ...extra});
+async function getActiveTabId(){
+  if(currentTabId) return currentTabId;
+  const [tab] = await chrome.tabs.query({active:true, currentWindow:true});
+  currentTabId = tab ? tab.id : null;
+  return currentTabId;
+}
+
+async function send(action, extra={}){
+  const tabId = await getActiveTabId();
+  return chrome.runtime.sendMessage({target:'background', tabId, action, ...extra});
 }
 
 function setSlider(id, val){
@@ -13,7 +23,10 @@ function setSlider(id, val){
 }
 
 async function refresh(){
-  const r = await chrome.runtime.sendMessage({target:'offscreen', action:'status'}).catch(()=>null);
+  const tabId = await getActiveTabId();
+  if(!tabId) return;
+
+  const r = await chrome.runtime.sendMessage({target:'offscreen', tabId, action:'status'}).catch(()=>null);
   if(r && r.running){
     setSlider('voice', Math.round(r.voice*100));
     setSlider('bgm', Math.round(r.bgm*100));
